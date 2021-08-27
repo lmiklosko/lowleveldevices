@@ -12,7 +12,7 @@
 #define _R
 #define _W
 #define _RW
-#define _RS [[maybe_unused]] _C
+#define _RS _C
 
 #define BCM_PASSWORD 0x5A000000
 
