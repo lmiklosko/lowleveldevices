@@ -83,6 +83,38 @@ bool GpioController::tryOpen(int pin, std::shared_ptr<GpioPin>* out) noexcept
 	}
 }
 
+
+static inline void check_bank__(unsigned bank)
+{
+    if (bank > 2)
+    {
+        throw LLD::invalid_argument_exception("GpioController::setDriveStrength",
+                                              "bank <= 2",
+                                              std::to_string(bank));
+    }
+}
+void GpioController::setDriveStrength(unsigned bank, PinDriveStrength strength)
+{
+    check_bank__(bank);
+    _impl->setDriveStrength(bank, strength);
+}
+[[nodiscard]] PinDriveStrength GpioController::getDriveStrength(unsigned int bank) const
+{
+    check_bank__(bank);
+    return _impl->getDriveStrength(bank);
+}
+
+void GpioController::setHysteresis(unsigned int bank, bool enabled)
+{
+    check_bank__(bank);
+    _impl->setHysteresis(bank, enabled);
+}
+[[nodiscard]] bool GpioController::getHysteresis(unsigned int bank) const
+{
+    check_bank__(bank);
+    return _impl->getHysteresis(bank);
+}
+
 int GpioController::count() const noexcept
 {
 	return _impl->count();

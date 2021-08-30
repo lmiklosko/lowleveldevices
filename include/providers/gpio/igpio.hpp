@@ -5,8 +5,7 @@
 #include <vector>
 #include <memory>
 
-namespace Devices {
-namespace Gpio {
+namespace Devices::Gpio {
 	enum class PinValue
 	{
 		Low,
@@ -31,6 +30,17 @@ namespace Gpio {
 		Falling,
 		Both
 	};
+	enum class PinDriveStrength
+    {
+        s2mA = 0,
+        s4mA,
+        s6mA,
+        s8mA,
+        s10mA,
+        s12mA,
+        s14mA,
+        s16mA
+    };
 
 	using _Isr = std::function<void(PinEdge)>;
 
@@ -57,6 +67,13 @@ public:
 	virtual ~IGpioControllerProvider() {}
 
 	virtual IGpioPinProvider* open(int) = 0;
+
+	virtual void setDriveStrength(unsigned bank, PinDriveStrength driveStrength) = 0;
+	virtual PinDriveStrength getDriveStrength(unsigned bank) const = 0;
+
+	virtual void setHysteresis(unsigned bank, bool enabled) = 0;
+	virtual bool getHysteresis(unsigned bank) const = 0;
+
 	virtual int base() const = 0;
 	virtual int count() const = 0;
 	virtual std::string name() const = 0;
@@ -72,6 +89,5 @@ public:
 	virtual ControllerProviderList getControllers(std::string const&) const = 0;
 };
 
-}
 }
 }

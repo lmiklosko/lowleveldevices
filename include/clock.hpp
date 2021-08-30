@@ -4,25 +4,18 @@
 
 namespace Clocks
 {
+    /**
+     * These clocks are peripheral muxes clock sources. This means that PLLx refer to the
+     * PER channel of the respective PLL.
+     */
     enum class ClockSource
     {
         Disabled = 0,
-        /** 19.2 MHz oscillator clock. Unlikely to change. */
         Oscillator,
         PLLA = 4,
-        /** Main CPU clock (default 1.2 GHz), changes with overclock settings */
         PLLC,
-        /** 500 MHz fixed clock. Unlikely to change */
         PLLD,
-        /** 216 MHz HDMI auxiliary clock. */
-        HDMIAuxiliary
-    };
-
-    static constexpr auto maxClockNameSize = 20;
-    struct ClockInfo
-    {
-        char clock_name[maxClockNameSize];
-        unsigned long clock_rate;
+        PLLH
     };
 
     class ClockManager
@@ -30,8 +23,8 @@ namespace Clocks
     public:
         ClockManager() = delete;
 
-        static std::vector<ClockInfo> GetClockFrequencies();
-        static unsigned long GetClockFrequency(std::string_view clockName);
+        /** @returns 0 if the clock has been disabled, or actual frequency of a @ref ClockSource */
+        static unsigned long GetClockFrequency(ClockSource clockSource);
 
         static void SetPCMClock(ClockSource source, int integerDiv, int fractDiv);
         static void SetPWMClock(ClockSource source, int integerDiv, int fractDiv);

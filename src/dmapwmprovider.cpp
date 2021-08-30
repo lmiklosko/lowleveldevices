@@ -64,6 +64,15 @@ int DMAPwmControllerProvider::count() const noexcept
     return 2;
 }
 
+DMAPwmChannelProvider::~DMAPwmChannelProvider()
+{
+    auto pwm = bcm_pwmPerip(controllerID);
+    pwm->CTL &= ~(0xff << (8 * channelID));
+    pwm->CHANNEL[channelID].DAT = 0;
+    pwm->CHANNEL[channelID].RNG = 0;
+}
+
+
 void DMAPwmChannelProvider::setRange(uint32_t range) noexcept
 {
     bcm_pwmPerip(controllerID)->CHANNEL[channel()].RNG = range;

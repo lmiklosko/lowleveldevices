@@ -39,6 +39,8 @@ namespace Devices::Pwm::Provider
         {
         }
 
+        ~DMAPwmChannelProvider();
+
         /* virtual */ void setRange(uint32_t) NOEXCEPT override;
         /* virtual */ [[nodiscard]] uint32_t getRange() const NOEXCEPT override;
 

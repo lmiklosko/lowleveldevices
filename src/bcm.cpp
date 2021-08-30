@@ -112,36 +112,10 @@ volatile pcm_base_t* bcm_pcmPerip()
 [[maybe_unused]]
 volatile pwm_base_t *bcm_pwmPerip(std::size_t idx)
 {
-    return getPeripheralPtr<pwm_base_t, 2, 0x800>(0x0020C000, idx);
+    return getPeripheralPtr<volatile pwm_base_t, 2, 0x800>(0x0020C000, idx);
 }
-
-#include <unordered_map>
-#include <tuple>
-static std::unordered_map<int, std::tuple<int,int,int>> pwmAltFunctions =
+[[maybe_unused]]
+volatile a2w_base_t* bcm_a2wPerip()
 {
-        {12, {0,0,0}},
-        {13, {0,1,0}},
-        {18, {0,0,5}},
-        {19, {0,1,5}},
-
-        {40, {1,0,0}},
-        {41, {1,1,0}},
-        {45, {0,1,0}},
-};
-
-static std::unordered_map<int, std::tuple<int,int>> gpclkAltFunctions =
-{
-        {4, {0,0}},
-        {5, {1,0}},
-        {6, {2,0}},
-
-        {20, {0,0}},
-        {21, {1,0}},
-
-        {32, {0,0}},
-        {34, {0,0}},
-
-        {42, {1,0}},
-        {43, {2,0}},
-        {44, {1,0}},
-};
+    return getPeripheralPtr<volatile a2w_base_t>(0x00102000);
+}

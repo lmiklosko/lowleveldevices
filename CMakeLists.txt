@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project( Ligntning VERSION 0.0.1
+project( Ligntning VERSION 0.0.2
 	DESCRIPTION "Raspberry Pi low level devices driver for userspace"
 	LANGUAGES CXX
 )
@@ -14,13 +14,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Build development application by default when building in debug mode,
-# only enable gpio support by default
+# Build development application by default when building in debug mode
 option(BUILD_DEV_APP "Build development application" $<IF:$<CONFIG:Debug>,ON,OFF>)
-
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-	message(WARNING "Please note that all other systems than Linux have only limited support")
-endif()
 
 # DMA Polling accuracy for interrupt handling. The lower the value, the faster the sensing is.
 # The value is specified in microseconds (defaults to 100us)
@@ -34,9 +29,29 @@ set( lld_SOURCES
 	${PROJECT_SOURCE_DIR}/src/lowleveldevices.cpp
 	${PROJECT_SOURCE_DIR}/src/dmapwmprovider.cpp
 	${PROJECT_SOURCE_DIR}/src/dmagpioprovider.cpp)
+set( lld_HEADERS
+		${PROJECT_SOURCE_DIR}/include/bcm_host.hpp
+		${PROJECT_SOURCE_DIR}/include/clock.hpp
+		${PROJECT_SOURCE_DIR}/include/exceptions.hpp
+		${PROJECT_SOURCE_DIR}/include/filesystem.hpp
+		${PROJECT_SOURCE_DIR}/include/ilowleveldevices.hpp
+		${PROJECT_SOURCE_DIR}/include/lowleveldevices.hpp
+
+		${PROJECT_SOURCE_DIR}/include/devices/gpio.hpp
+		${PROJECT_SOURCE_DIR}/include/devices/pwm.hpp
+		${PROJECT_SOURCE_DIR}/include/devices/spi.hpp
+
+		${PROJECT_SOURCE_DIR}/include/providers/gpio/igpio.hpp
+		${PROJECT_SOURCE_DIR}/include/providers/pwm/ipwm.hpp
+		${PROJECT_SOURCE_DIR}/include/providers/i2c/ii2c.hpp
+		${PROJECT_SOURCE_DIR}/include/providers/spi/ispi.hpp
+
+		${PROJECT_SOURCE_DIR}/include/providers/pwm/dmapwmprovider.hpp
+		${PROJECT_SOURCE_DIR}/include/providers/gpio/dmagpioprovider.hpp
+)
 
 # Create library and include appropriate directories
-add_library( lld SHARED ${lld_SOURCES} )
+add_library( lld SHARED ${lld_SOURCES} ${lld_HEADERS})
 target_include_directories( lld
 	PRIVATE
 		${PROJECT_SOURCE_DIR}/include/providers
@@ -84,10 +99,15 @@ if (BUILD_DEV_APP)
 	target_link_libraries(devapp lld)
 endif()
 
- install ( TARGETS lld
- 	ARCHIVE
- 	  DESTINATION lib
- 	  COMPONENT Libraries
- 	PUBLIC_HEADER
- 	  DESTINATION include
- )
+install( TARGETS lld DESTINATION lib)
+install( FILES ${lld_HEADERS} TYPE INCLUDE)
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_DESCRIPTION ${PROJECT_DESCRIPTION})
+set(CPACK_PACKAGE_CONTACT "Lukas MIKLOSKO l.miklosko@gmail.com")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Lukas MIKLOSKO")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+include(CPack)

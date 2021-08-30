@@ -64,14 +64,10 @@ struct power_management_t
     _RS uint32_t UNUSED0[4];
     _RW uint32_t STATUS;
     _RW uint32_t RSTC;
-    _RW uint32_t RSTS;
+    _RW uint32_t RSTS; // 20
     _RW uint32_t WDOG;
-    _RW uint32_t PADS0;
-    _RW uint32_t PADS2;
-    _RW uint32_t PADS3;
-    _RW uint32_t PADS4;
-    _RW uint32_t PADS5;
-    _RW uint32_t PADS6;
+    _RW uint32_t PADS0; // 28
+    _RW uint32_t PADS[5];   // 2c
     _RS uint32_t UNUSED1[1];
     _RW uint32_t CAM[2];
     _RW uint32_t CCP2TX;
@@ -209,26 +205,46 @@ struct clock_management_t
     _RW uint32_t EMMCDIV;   // 1d4
 };
 
+struct pll_ctl {
+    uint32_t val;
+    uint32_t RESERVED[7];
+};
+struct pll_frac {
+    uint32_t val;
+    uint32_t RESERVED[7];
+};
+struct pll_per {
+    uint32_t val;
+    uint32_t RESERVED[7];
+};
 /**
  *  A2W Block.
  *
  *  Offsets taken from RPi Linux Kernel:
  *      https://github.com/raspberrypi/linux/blob/7fb9d006d3ff3baf2e205e0c85c4e4fd0a64fcd0/drivers/clk/bcm/clk-bcm2835.c
- *  Failed to find relevant datasheet, thus aborting this for now.
+ *      https://elinux.org/BCM2835_registers#A2W
+ *  Failed to find relevant datasheet.
  *
  *  @address 0x00102000
  *  @for: pll clocks
+ *  @note There are some defined registers inside RESERVED blocks, but we don't use them or we failed to find the
+ *  register description - for sake of simplicity we didn't defined them here.
  */
 struct a2w_base_t
 {
-    _RS uint32_t RESERVED0[4];  //< UNKNOWN
-    _RW uint32_t PLLA_ANA0;
-    _RS uint32_t RESERVED1[7];  //< UNKNOWN
-    _RW uint32_t PLLC_ANA0;
-    _RS uint32_t RESERVED2[7];  //< UNKNOWN
-    _RW uint32_t PLLD_ANA0;
-    _RS uint32_t RESERVED3[7];  //< UNKNOWN
-    _RW uint32_t PLLH_ANA0;
+    _C  uint32_t RESERVED0[0x40];
+    _RW pll_ctl PLLx_CTRL[4];
+    _C  uint32_t RESERVED1[4];
+    _RW uint32_t XOSC_CTRL;
+    _C  uint32_t RESERVED2[0x13];
+    _RW pll_ctl PLLB_CTRL;
+    _RW pll_frac PLLx_FRAC[4];
+    _RW uint32_t RESERVED3[0x17];
+    _RW uint32_t PLLB_FRAC;
+    _C  uint32_t RESERVED4[0x17];
+    _RW uint32_t PLLH_AUX;
+    _C  uint32_t RESERVED5[0x70];
+    _RW pll_per PLLx_PER[3];
 };
 
 /**
@@ -318,8 +334,15 @@ static_assert(offsetof(gpio_base_t, RESERVED_3) == 0x3c);
 static_assert(offsetof(gpio_base_t, RESERVED_6) == 0x60);
 
 static_assert(offsetof(pwm_base_t, CTL) == 0x0);
-static_assert(offsetof(pwm_base_t, CHANNEL[0].RNG) == sizeof(uint32_t) * 4);
-static_assert(offsetof(pwm_base_t, CHANNEL[1].RNG) == sizeof(uint32_t) * 8);
+static_assert(offsetof(pwm_base_t, CHANNEL[0].RNG) == 0x10);
+static_assert(offsetof(pwm_base_t, CHANNEL[1].RNG) == 0x20);
+
+
+static_assert(offsetof(a2w_base_t, PLLx_CTRL) == 0x100);
+static_assert(offsetof(a2w_base_t, XOSC_CTRL) == 0x190);
+static_assert(offsetof(a2w_base_t, PLLB_CTRL) == 0x1e0);
+static_assert(offsetof(a2w_base_t, PLLx_FRAC) == 0x200);
+static_assert(offsetof(a2w_base_t, PLLx_PER) == 0x500);
 
 #define CLK_CTL_BUSY    (1 <<7)
 #define CLK_CTL_KILL    (1 <<5)
@@ -328,6 +351,22 @@ static_assert(offsetof(pwm_base_t, CHANNEL[1].RNG) == sizeof(uint32_t) * 8);
 
 #define CLK_DIV_DIVI(x) ((x)<<12)
 #define CLK_DIV_DIVF(x) ((x)<< 0)
+
+#define A2W_PLL_CTRL_NDIV_BIT  0
+#define A2W_PLL_CTRL_NDIV_MASK 0x3ff
+#define A2W_PLL_CTRL_PDIV_BIT 12
+#define A2W_PLL_CTRL_PDIV_MASK 0x7000
+
+#define A2W_PLL_FRAC_FRAC_BIT 0
+#define A2W_PLL_FRAC_FRAC_MASK 0x000fffff
+
+#define A2W_PLL_CN_DIV_BIT 0
+#define A2W_PLL_CN_DIV_MASK 0x000000ff
+
+#define A2W_XOSC_CTRL_PLLAEN 0x00000040
+#define A2W_XOSC_CTRL_PLLBEN 0x00000080
+#define A2W_XOSC_CTRL_PLLCEN 0x00000001
+#define A2W_XOSC_CTRL_PLLDEN 0x00000020
 
 #define PWM_CTL_MSEN1 (1<<7)
 #define PWM_CTL_PWEN1 (1<<0)
@@ -342,7 +381,8 @@ static constexpr std::size_t bcm_numPwmControllers = 1;
 [[maybe_unused]] volatile clock_management_t* bcm_clkPerip();
 [[maybe_unused]] volatile gpio_base_t* bcm_gpioPerip();
 [[maybe_unused]] volatile pcm_base_t* bcm_pcmPerip();
-[[maybe_unused]] volatile pwm_base_t *bcm_pwmPerip(std::size_t idx);
+[[maybe_unused]] volatile pwm_base_t* bcm_pwmPerip(std::size_t idx);
+[[maybe_unused]] volatile a2w_base_t* bcm_a2wPerip();
 
 
 #endif //LIGHTNING_BCM_HOST_HPP

@@ -64,6 +64,35 @@ IGpioPinProvider* DMAGpioControllerProvider::open(int pin)
 	return new DMAGpioPinProvider(pin);
 }
 
+void DMAGpioControllerProvider::setDriveStrength(unsigned bank, PinDriveStrength strength)
+{
+    auto pm = bcm_pmPerip();
+    pm->PADS[bank % 2] = (pm->PADS[bank % 2] & ~(0x7)) | (static_cast<uint8_t>(strength) & 0x7);
+}
+[[nodiscard]] PinDriveStrength DMAGpioControllerProvider::getDriveStrength(unsigned int bank) const
+{
+    auto pm = bcm_pmPerip();
+    return static_cast<PinDriveStrength>(pm->PADS[bank % 2] & 0x7);
+}
+
+void DMAGpioControllerProvider::setHysteresis(unsigned int bank, bool enabled)
+{
+    auto pm = bcm_pmPerip();
+    if (enabled)
+    {
+        pm->PADS[bank % 2] |= 1 << 3;
+    }
+    else
+    {
+        pm->PADS[bank % 2] &= ~(1 << 3);
+    }
+}
+bool DMAGpioControllerProvider::getHysteresis(unsigned int bank) const
+{
+    auto pm = bcm_pmPerip();
+    return (pm->PADS[bank % 2] & (1 << 3)) != 0;
+}
+
 int DMAGpioControllerProvider::base() const
 {
 	return 0;
@@ -80,6 +109,12 @@ std::string DMAGpioControllerProvider::name() const
 }
 
 // --------------------------------------------------------------------------------------
+
+DMAGpioPinProvider::~DMAGpioPinProvider()
+{
+    setDriveMode(PinDriveMode::Input);
+    enableInterrupt(PinEdge::None, nullptr);
+}
 
 PinValue DMAGpioPinProvider::read() const
 {

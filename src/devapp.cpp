@@ -1,11 +1,6 @@
-#include "devices/pwm.hpp"
-#include "devices/gpio.hpp"
 #include "clock.hpp"
 #include <exception>
 #include <iostream>
-
-#include "dmagpioprovider.hpp"
-using namespace std::chrono_literals;
 
 int main()
 {
@@ -17,18 +12,10 @@ int main()
 
     try
     {
-        ClockManager::SetPWMClock(ClockSource::Oscillator, 2, 0);
-
-        auto gpio = GpioController::getDefault()->open(12);
-        gpio->setDriveMode(PinDriveMode::Pwm);
-        gpio->write(PinValue::High);
-
-        auto channel = PwmController::getDefault()->open(0);
-        channel->setRange(75);
-        channel->setData(15);
-        channel->enable(true);
-
-        GpioProvider::getControllers(Gpio::Provider::DMAGpioProvider::getInstance());
+        std::cout
+            << "PLLA: " << ClockManager::GetClockFrequency(ClockSource::PLLA) << '\n'
+            << "PLLC: " << ClockManager::GetClockFrequency(ClockSource::PLLC) << '\n'
+            << "PLLD: " << ClockManager::GetClockFrequency(ClockSource::PLLD) << std::endl;
     }
     catch (const std::exception & e)
     {

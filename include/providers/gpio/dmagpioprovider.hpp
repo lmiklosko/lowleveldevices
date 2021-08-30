@@ -16,6 +16,12 @@ class DMAGpioControllerProvider final : public IGpioControllerProvider
 public:
 	IGpioPinProvider* open(int) override;
 
+	void setDriveStrength(unsigned bank, PinDriveStrength strength) override;
+	[[nodiscard]] PinDriveStrength getDriveStrength(unsigned int bank) const override;
+
+	void setHysteresis(unsigned int bank, bool enabled) override;
+	[[nodiscard]] bool getHysteresis(unsigned int bank) const override;
+
 	[[nodiscard]] int base() const override;
 	[[nodiscard]] int count() const override;
 	[[nodiscard]] std::string name() const override;
@@ -42,6 +48,8 @@ public:
     {
 	    _poll.pollingAccuracy = std::min(_poll.pollingAccuracy, accuracy);
     }
+
+    ~DMAGpioPinProvider();
 
 private:
 	int _pin, _pinBank;

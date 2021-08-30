@@ -36,6 +36,12 @@ public:
     [[nodiscard]] std::shared_ptr<GpioPin> open(int pin);
     [[nodiscard]] bool tryOpen(int pin, std::shared_ptr<GpioPin>* out) noexcept;
 
+    void setDriveStrength(unsigned bank, PinDriveStrength strength);
+    [[nodiscard]] PinDriveStrength getDriveStrength(unsigned int bank) const;
+
+    void setHysteresis(unsigned int bank, bool enabled);
+    [[nodiscard]] bool getHysteresis(unsigned int bank) const;
+
     [[nodiscard]] int count() const noexcept;
     [[nodiscard]] std::string name() const;
 
