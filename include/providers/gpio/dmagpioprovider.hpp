@@ -40,14 +40,8 @@ public:
 	[[nodiscard]] PinDriveMode getDriveMode() const override;
 	void setDriveMode(PinDriveMode) override;
 
-	void enableInterrupt(PinEdge, _Isr) override;
+	void enableInterrupt(PinEdge, Isr) override;
 	[[nodiscard]] int pinNumber() const noexcept override { return _pin; }
-
-	template<typename Rep, typename Period>
-	static void setPollingAccuracy(std::chrono::duration<Rep, Period> const& accuracy)
-    {
-	    _poll.pollingAccuracy = std::min(_poll.pollingAccuracy, accuracy);
-    }
 
     ~DMAGpioPinProvider();
 
@@ -59,13 +53,6 @@ private:
 		_pin(pin), _pinBank(pin/32), _pinBit(1 << (pin % 32))
 	{
 	}
-
-    static struct poll {
-        std::thread instance{};
-        std::map<int, std::function<void(PinEdge)>> map{};
-        std::chrono::microseconds pollingAccuracy{1000};
-        std::atomic_bool running{true};
-    } _poll;
 };
 
 class DMAGpioProvider final : public IGpioProvider

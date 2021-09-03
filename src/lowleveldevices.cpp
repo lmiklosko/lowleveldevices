@@ -18,6 +18,7 @@ using namespace Devices;
             return nullptr;
         }
     }();
+/* static */ bool LowLevelDevicesController::enableTrace = false;
 
 // ----------------------------------------------------------------------------
 

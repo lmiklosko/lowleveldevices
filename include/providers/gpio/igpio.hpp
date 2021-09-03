@@ -42,51 +42,51 @@ namespace Devices::Gpio {
         s16mA
     };
 
-	using _Isr = std::function<void(PinEdge)>;
+	using Isr = std::function<void(PinEdge)>;
 
 namespace Provider{
 
 class IGpioPinProvider
 {
 public:
-	virtual ~IGpioPinProvider() {}
+	virtual ~IGpioPinProvider() = default;
 
-	virtual PinValue read() const = 0;
+	[[nodiscard]] virtual PinValue read() const = 0;
 	virtual void write(PinValue) = 0;
 
-	virtual PinDriveMode getDriveMode() const = 0;
+	[[nodiscard]] virtual PinDriveMode getDriveMode() const = 0;
 	virtual void setDriveMode(PinDriveMode) = 0;
 
 	virtual void enableInterrupt(PinEdge, std::function<void(PinEdge)>) = 0;
-	virtual int pinNumber() const noexcept = 0;
+    [[nodiscard]] virtual int pinNumber() const noexcept = 0;
 };
 
 class IGpioControllerProvider
 {
 public:
-	virtual ~IGpioControllerProvider() {}
+	virtual ~IGpioControllerProvider() = default;
 
 	virtual IGpioPinProvider* open(int) = 0;
 
 	virtual void setDriveStrength(unsigned bank, PinDriveStrength driveStrength) = 0;
-	virtual PinDriveStrength getDriveStrength(unsigned bank) const = 0;
+    [[nodiscard]] virtual PinDriveStrength getDriveStrength(unsigned bank) const = 0;
 
 	virtual void setHysteresis(unsigned bank, bool enabled) = 0;
-	virtual bool getHysteresis(unsigned bank) const = 0;
+    [[nodiscard]] virtual bool getHysteresis(unsigned bank) const = 0;
 
-	virtual int base() const = 0;
-	virtual int count() const = 0;
-	virtual std::string name() const = 0;
+    [[nodiscard]] virtual int base() const = 0;
+    [[nodiscard]] virtual int count() const = 0;
+    [[nodiscard]] virtual std::string name() const = 0;
 };
 
 using ControllerProviderList = std::vector<std::unique_ptr<IGpioControllerProvider>>;
 class IGpioProvider
 {
 public:
-	virtual ~IGpioProvider() {}
+	virtual ~IGpioProvider() = default;
 
-	virtual ControllerProviderList getControllers() const = 0;
-	virtual ControllerProviderList getControllers(std::string const&) const = 0;
+    [[nodiscard]] virtual ControllerProviderList getControllers() const = 0;
+    [[nodiscard]] virtual ControllerProviderList getControllers(std::string const&) const = 0;
 };
 
 }

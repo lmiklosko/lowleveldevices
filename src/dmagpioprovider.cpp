@@ -1,15 +1,6 @@
 
 #include "dmagpioprovider.hpp"
 #include "exceptions.hpp"
-#include <map>
-#include <vector>
-#include <algorithm>
-#include <array>
-#include <functional>
-
-#include <thread>
-#include <chrono>
-#include <atomic>
 
 #include "bcm_host.hpp"
 
@@ -17,10 +8,6 @@
 using namespace Devices;
 using namespace Devices::Gpio;
 using namespace Devices::Gpio::Provider;
-
-// --------------------------------------------------------------------------------------
-
-/* static */ DMAGpioPinProvider::poll DMAGpioPinProvider::_poll{};
 
 // --------------------------------------------------------------------------------------
 
@@ -113,7 +100,6 @@ std::string DMAGpioControllerProvider::name() const
 DMAGpioPinProvider::~DMAGpioPinProvider()
 {
     setDriveMode(PinDriveMode::Input);
-    enableInterrupt(PinEdge::None, nullptr);
 }
 
 PinValue DMAGpioPinProvider::read() const
@@ -147,7 +133,7 @@ static const std::map<int, std::vector<std::pair<uint8_t,PinDriveMode>>> altMap 
     {5, {
         {0, PinDriveMode::Clock}    /* GPCLK1 */
     }},
-    {5, {
+    {6, {
         {0, PinDriveMode::Clock}    /* GPCLK2 */
     }},
 
@@ -205,6 +191,22 @@ PinDriveMode DMAGpioPinProvider::getDriveMode() const
     switch (mode)
     {
     case 0b000:
+        /* BCM2711 handles pull U/D differently. It is also possible to read the value back
+         * while on older platforms it is not */
+        if (bcm_getPeripheralAddress() == 0xfe000000)
+        {
+            auto pud = bcm_gpioPerip()->PUPPDN_CTRL[_pin / 16] >> ((_pin % 16) * 2);
+            pud &= 0b11;
+
+            if (pud == 0b01)
+            {
+                return PinDriveMode::InputPullDown;
+            }
+            if (pud == 0b10)
+            {
+                return PinDriveMode::InputPullUp;
+            }
+        }
         return PinDriveMode::Input;
 
     case 0b001:
@@ -233,13 +235,22 @@ void DMAGpioPinProvider::setDriveMode(PinDriveMode mode)
     };
     auto setPU = [this](bool up, bool down){
         auto ptr = bcm_gpioPerip();
-
-        ptr->GPPUD = (up ? 0b10 : 0) | (down ? 0b01 : 0);
-        std::this_thread::sleep_for(std::chrono::nanoseconds(150));
-        ptr->GPPUDCLK[_pinBank] = _pinBit;
-        std::this_thread::sleep_for(std::chrono::nanoseconds(150));
-        ptr->GPPUDCLK[_pinBank] = _pinBit;
-        ptr->GPPUD = 0;
+        /* From BCM2711, the p U/D handling has been changed */
+        if (bcm_getPeripheralAddress() == 0xfe000000)
+        {
+            const auto bits = (up ? 0b01 : 0) | (down ? 0b10 : 0);
+            const auto offset = ((_pin % 16) * 2);
+            ptr->PUPPDN_CTRL[_pin/16] = (ptr->PUPPDN_CTRL[_pin/16] & ~(0b11 << offset)) | bits << offset;
+        }
+        else
+        {
+            ptr->GPPUD = (up ? 0b10 : 0) | (down ? 0b01 : 0);
+            std::this_thread::sleep_for(std::chrono::nanoseconds(150));
+            ptr->GPPUDCLK[_pinBank] = _pinBit;
+            std::this_thread::sleep_for(std::chrono::nanoseconds(150));
+            ptr->GPPUDCLK[_pinBank] = _pinBit;
+            ptr->GPPUD = 0;
+        }
     };
     static constexpr std::array<uint8_t, 6> altBits = {0b100, 0b101, 0b110, 0b111, 0b011, 0b010};
 
@@ -282,76 +293,7 @@ void DMAGpioPinProvider::setDriveMode(PinDriveMode mode)
 	}
 }
 
-// ------------------------ Interrupt handling -----------------------
-
-void DMAGpioPinProvider::enableInterrupt(PinEdge edge, _Isr fn)
+void DMAGpioPinProvider::enableInterrupt(PinEdge, Isr)
 {
-    auto ptr = bcm_gpioPerip();
-    if (edge == PinEdge::None)
-    {
-        ptr->GPREN[_pinBank] &= ~_pinBit;
-        ptr->GPFEN[_pinBank] &= ~_pinBit;
-
-        /* Detach interrupt */
-        auto it = _poll.map.find(pinNumber());
-        if (it != _poll.map.end())
-        {
-            _poll.map.erase(it);
-        }
-
-        if (_poll.map.empty())
-        {
-            _poll.running = false;
-            _poll.instance.join();
-        }
-        return;
-    }
-    else if (edge == PinEdge::Falling)
-    {
-        ptr->GPREN[_pinBank] &= ~_pinBit;
-        ptr->GPFEN[_pinBank] |= _pinBit;
-    }
-    else if (edge == PinEdge::Rising)
-    {
-        ptr->GPREN[_pinBank] |= _pinBit;
-        ptr->GPFEN[_pinBank] &= ~_pinBit;
-    }
-    else
-    {
-        ptr->GPREN[_pinBank] |= _pinBit;
-        ptr->GPFEN[_pinBank] |= _pinBit;
-    }
-
-    if (!_poll.instance.joinable() && !_poll.map.empty())
-    {
-        _poll.map[pinNumber()] = std::move(fn);
-        _poll.instance = std::thread([]{
-            auto ptr = bcm_gpioPerip();
-            while (_poll.running)
-            {
-                auto evt = ptr->GPEDS[0] + (ptr->GPEDS[1] * 4294967296ll);
-                int offset = 0;
-                while (evt && _poll.running)
-                {
-                    if (evt & 1 && _poll.map.find(offset) != _poll.map.end())
-                    {
-                        std::invoke(
-                                _poll.map[offset],
-                                (ptr->GPLEV[offset/32] & (offset % 32)) ? PinEdge::Rising : PinEdge::Falling);
-                    }
-
-                    ++offset;
-                    evt >>= 1;
-                }
-
-                std::this_thread::sleep_for(_poll.pollingAccuracy);
-            }
-        });
-    }
-    else
-    {
-        /* Even if entry already exists, we want to override isr */
-        _poll.map[pinNumber()] = fn;
-    }
+    throw LLD::not_supported_exception{};
 }
-

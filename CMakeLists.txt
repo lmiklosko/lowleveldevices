@@ -15,11 +15,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Build development application by default when building in debug mode
-option(BUILD_DEV_APP "Build development application" $<IF:$<CONFIG:Debug>,ON,OFF>)
+option(BUILD_DEV_APP "Build development application" $<CONFIG:Debug>)
 
-# DMA Polling accuracy for interrupt handling. The lower the value, the faster the sensing is.
-# The value is specified in microseconds (defaults to 100us)
-set(DMA_POLLING_ACCURACY 100 CACHE STRING "DMA Polling accuracy")
+string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
+add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
 set( lld_SOURCES
 	${PROJECT_SOURCE_DIR}/src/bcm.cpp
@@ -28,27 +27,30 @@ set( lld_SOURCES
 	${PROJECT_SOURCE_DIR}/src/clock.cpp
 	${PROJECT_SOURCE_DIR}/src/lowleveldevices.cpp
 	${PROJECT_SOURCE_DIR}/src/dmapwmprovider.cpp
-	${PROJECT_SOURCE_DIR}/src/dmagpioprovider.cpp)
-set( lld_HEADERS
-		${PROJECT_SOURCE_DIR}/include/bcm_host.hpp
-		${PROJECT_SOURCE_DIR}/include/clock.hpp
-		${PROJECT_SOURCE_DIR}/include/exceptions.hpp
-		${PROJECT_SOURCE_DIR}/include/filesystem.hpp
-		${PROJECT_SOURCE_DIR}/include/ilowleveldevices.hpp
-		${PROJECT_SOURCE_DIR}/include/lowleveldevices.hpp
-
-		${PROJECT_SOURCE_DIR}/include/devices/gpio.hpp
-		${PROJECT_SOURCE_DIR}/include/devices/pwm.hpp
-		${PROJECT_SOURCE_DIR}/include/devices/spi.hpp
-
-		${PROJECT_SOURCE_DIR}/include/providers/gpio/igpio.hpp
-		${PROJECT_SOURCE_DIR}/include/providers/pwm/ipwm.hpp
-		${PROJECT_SOURCE_DIR}/include/providers/i2c/ii2c.hpp
-		${PROJECT_SOURCE_DIR}/include/providers/spi/ispi.hpp
-
-		${PROJECT_SOURCE_DIR}/include/providers/pwm/dmapwmprovider.hpp
-		${PROJECT_SOURCE_DIR}/include/providers/gpio/dmagpioprovider.hpp
+	${PROJECT_SOURCE_DIR}/src/dmagpioprovider.cpp
+	${PROJECT_SOURCE_DIR}/src/cdevgpioprovider.cpp
 )
+set( lld_HEADERS
+	${PROJECT_SOURCE_DIR}/include/trace.hpp
+	${PROJECT_SOURCE_DIR}/include/bcm_host.hpp
+	${PROJECT_SOURCE_DIR}/include/clock.hpp
+	${PROJECT_SOURCE_DIR}/include/exceptions.hpp
+	${PROJECT_SOURCE_DIR}/include/filesystem.hpp
+	${PROJECT_SOURCE_DIR}/include/ilowleveldevices.hpp
+	${PROJECT_SOURCE_DIR}/include/lowleveldevices.hpp
+
+	${PROJECT_SOURCE_DIR}/include/devices/gpio.hpp
+	${PROJECT_SOURCE_DIR}/include/devices/pwm.hpp
+	${PROJECT_SOURCE_DIR}/include/devices/spi.hpp
+
+	${PROJECT_SOURCE_DIR}/include/providers/gpio/igpio.hpp
+	${PROJECT_SOURCE_DIR}/include/providers/pwm/ipwm.hpp
+	${PROJECT_SOURCE_DIR}/include/providers/i2c/ii2c.hpp
+	${PROJECT_SOURCE_DIR}/include/providers/spi/ispi.hpp
+
+	${PROJECT_SOURCE_DIR}/include/providers/pwm/dmapwmprovider.hpp
+	${PROJECT_SOURCE_DIR}/include/providers/gpio/dmagpioprovider.hpp
+	${PROJECT_SOURCE_DIR}/include/providers/gpio/cdevgpioprovider.hpp)
 
 # Create library and include appropriate directories
 add_library( lld SHARED ${lld_SOURCES} ${lld_HEADERS})

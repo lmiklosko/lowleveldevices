@@ -1,12 +1,20 @@
 #pragma once
 #include <memory>
-#include "ipwm.hpp"
-#include "ispi.hpp"
-#include "ii2c.hpp"
-#include "igpio.hpp"
 
 namespace Devices
 {
+namespace Gpio::Provider{
+    class IGpioControllerProvider;
+}
+namespace Spi::Provider{
+    class ISpiControllerProvider;
+}
+namespace I2c::Provider{
+    class II2cControllerProvider;
+}
+namespace Pwm::Provider{
+    class IPwmControllerProvider;
+}
 
 struct ILowLevelDevicesAggregateProvider
 {
@@ -19,6 +27,7 @@ struct ILowLevelDevicesAggregateProvider
 struct LowLevelDevicesController
 {
 	static ILowLevelDevicesAggregateProvider* defaultProvider;
+	static bool enableTrace;
 };
 
 }

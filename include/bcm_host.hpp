@@ -280,6 +280,8 @@ struct gpio_base_t
     _RS uint32_t RESERVED_10;
     _RW uint32_t GPPUD;
     _RW uint32_t GPPUDCLK[2];
+    _RW uint32_t RESERVED_11[17];
+    _RW uint32_t PUPPDN_CTRL[4];
 };
 
 /**
@@ -331,7 +333,8 @@ static_assert(offsetof(clock_management_t, PLLA) == 0x104);
 static_assert(offsetof(clock_management_t, PLLB) == 0x170);
 
 static_assert(offsetof(gpio_base_t, RESERVED_3) == 0x3c);
-static_assert(offsetof(gpio_base_t, RESERVED_6) == 0x60);
+static_assert(offsetof(gpio_base_t, GPAFEN) == 0x88);
+static_assert(offsetof(gpio_base_t, PUPPDN_CTRL) == 0xe4);
 
 static_assert(offsetof(pwm_base_t, CTL) == 0x0);
 static_assert(offsetof(pwm_base_t, CHANNEL[0].RNG) == 0x10);

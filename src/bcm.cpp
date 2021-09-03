@@ -11,6 +11,10 @@
 #include "exceptions.hpp"
 #include "bcm_host.hpp"
 
+#ifndef MAP_LOCKED
+#define MAP_LOCKED 0
+#endif
+
 static unsigned get_dt_ranges(const char *filename, unsigned offset)
 {
     unsigned address = ~0;
