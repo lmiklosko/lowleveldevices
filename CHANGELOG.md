@@ -1,3 +1,18 @@
+## [0.0.4] - Wed 07 2021
+
+### <span style="color:green">Added</span>
+* GPIO SFS support.
+  * Added to support older kernels and to allow user to select from every available interface.
+  * Supports only input/output with no pull configuration.
+  * Event detection running on a worker thread using poll
+  * Implemented using Linux file system.
+  
+### Changed
+* Extracted logic behind polling from cdev gpio provider into a separate class, Poller.
+  * Added robustness to prevent UB when removing/adding descriptors from within the callback.
+  * Automatically clean up the resources when no FD is being watched.
+  * Accepts custom read function to be more generic/reusable
+
 ## [0.0.3] - Sep 03 2021
 ### <span style="color:green">Added</span>
 * GPIO Character device support.

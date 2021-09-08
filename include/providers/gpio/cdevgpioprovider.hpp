@@ -1,12 +1,7 @@
 #pragma once
 
-#include <thread>
-#include <mutex>
-#include <poll.h>
-#include <map>
-#include <condition_variable>
 #include "igpio.hpp"
-#include "trace.hpp"
+#include "threading/poller.hpp"
 
 namespace Devices::Gpio::Provider {
 
@@ -48,10 +43,6 @@ public:
 	void enableInterrupt(PinEdge, std::function<void(PinEdge)>) override;
 	[[nodiscard]] int pinNumber() const noexcept override { return _pin; }
 
-
-protected:
-    static std::unique_lock<std::mutex> notifyWorker();
-
 private:
     CDevGpioPinProvider(int fd, int pin);
     ~CDevGpioPinProvider();
@@ -59,14 +50,8 @@ private:
     int _pin;
 	int _cd, _pd;
 
-    static struct __event_handler_t{
-        std::thread worker;
-        std::vector<struct pollfd> storage;
-        std::map<int, std::function<void(PinEdge)>> callbacks;
-        std::condition_variable cv;
-        std::mutex mutex;
-        int fd[2];
-    } __event_handler;
+	static Poller<Isr> poller;
+	static void readEvent(int fd, Isr const& callback);
 };
 
 class CDevGpioProvider final : public IGpioProvider

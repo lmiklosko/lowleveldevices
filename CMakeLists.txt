@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project( Ligntning VERSION 0.0.2
+project( Ligntning VERSION 0.0.4
 	DESCRIPTION "Raspberry Pi low level devices driver for userspace"
 	LANGUAGES CXX
 )
@@ -29,6 +29,7 @@ set( lld_SOURCES
 	${PROJECT_SOURCE_DIR}/src/dmapwmprovider.cpp
 	${PROJECT_SOURCE_DIR}/src/dmagpioprovider.cpp
 	${PROJECT_SOURCE_DIR}/src/cdevgpioprovider.cpp
+	${PROJECT_SOURCE_DIR}/src/sfsgpioprovider.cpp
 )
 set( lld_HEADERS
 	${PROJECT_SOURCE_DIR}/include/trace.hpp
@@ -50,7 +51,8 @@ set( lld_HEADERS
 
 	${PROJECT_SOURCE_DIR}/include/providers/pwm/dmapwmprovider.hpp
 	${PROJECT_SOURCE_DIR}/include/providers/gpio/dmagpioprovider.hpp
-	${PROJECT_SOURCE_DIR}/include/providers/gpio/cdevgpioprovider.hpp)
+	${PROJECT_SOURCE_DIR}/include/providers/gpio/cdevgpioprovider.hpp
+)
 
 # Create library and include appropriate directories
 add_library( lld SHARED ${lld_SOURCES} ${lld_HEADERS})

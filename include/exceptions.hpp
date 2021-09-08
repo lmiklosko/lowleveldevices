@@ -3,7 +3,7 @@
 
 #include <exception>
 #include <string>
-#include <string.h>
+#include <cstring>
 
 namespace LLD
 {
@@ -56,7 +56,7 @@ struct memory_access_exception : public access_exception
  *
  *  Requested pin/device is already open
  */
-struct access_violation_exception : public lowleveldevices_exception
+struct access_violation_exception : public access_exception
 {
     [[nodiscard]]
     /* virtual */ const char* what() const noexcept override

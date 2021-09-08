@@ -11,13 +11,15 @@
 
 namespace
 {
+    std::mutex& trace_getMutex() {
+        static std::mutex m;
+        return m;
+    }
     template<typename... Args>
     void trace_helper(const char* file, int line, Args&& ...args)
     {
-        static std::mutex m;
-
-        std::lock_guard guard(m);
-        std::cout << "[ TRACE ] " << file+SOURCE_PATH_SIZE << ":" << line << " " << std::this_thread::get_id() << "("
+        std::lock_guard guard(trace_getMutex());
+        std::cout << "[ TRACE ] " << file + SOURCE_PATH_SIZE << ":" << line << " " << std::this_thread::get_id() << "("
             << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count() << "): ";
         ((std::cout << args),...) << std::endl;
     }
